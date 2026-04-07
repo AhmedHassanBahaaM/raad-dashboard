@@ -770,6 +770,12 @@ th{padding:11px 13px;color:var(--t2);font-weight:700;text-align:right;white-spac
     <button onclick="fullPushToSheet()" title="رفع كل البيانات للشيت"
       style="flex:1;padding:7px 4px;background:#1a2e55;border:1px solid #5888f8;color:#8ab0ff;border-radius:6px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600">↑ رفع</button>
   </div>
+  <div style="padding:4px 10px 8px">
+    <a href="https://docs.google.com/spreadsheets/d/1W5uAQdi_7iO0iHpaTCEWKYU1zI31GcJO/edit?gid=1331295762#gid=1331295762" target="_blank"
+      style="display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 4px;background:#1a2e55;border:1px solid #20d898;color:#20d898;border-radius:6px;font-family:inherit;font-size:12px;font-weight:600;text-decoration:none;width:100%;box-sizing:border-box">
+      <span style="font-size:14px">📊</span> فتح Google Sheets
+    </a>
+  </div>
 </div><!-- /sb -->
 
 <!-- MAIN -->
@@ -3756,7 +3762,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
   if(!loadPersisted()) { /* use embedded default DB */ }
   normalise();
   loadAudit();
-  if(checkSession()){ showApp(); setTimeout(()=>syncFromSheet(),800); }
+  if(checkSession()){ showApp(); if(!localStorage.getItem(CFG.DATA_KEY)) setTimeout(()=>syncFromSheet(),800); }
   else { $i('lwrap').style.display='flex'; $i('app').style.display='none'; }
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'){ closeModal(); $i('cdlg').classList.remove('open'); }
