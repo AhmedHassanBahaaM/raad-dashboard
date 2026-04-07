@@ -1325,7 +1325,7 @@ let DB = JSON.parse(JSON.stringify(DEFAULT_DB)); // deep clone
 // GOOGLE SHEETS SYNC
 // ════════════════════════════════════════════════════════════
 // ← بعد نشر Apps Script، الصق الـ URL هنا
-const SYNC_URL = 'https://script.google.com/macros/s/AKfycbwziD0BpCag-w4AhMl_29MKuocKtM7QY9y-rUxyS6K3Zp2hFq_L9DdNdYdd_ML0L1Yj/exec';
+const SYNC_URL = 'https://script.google.com/macros/s/AKfycbyW5yt9c9G3Bl6MIQED5ZEFU08WAu3B3JhWcaYaHOJQ4bEyt-4KvxB-fm6YHCgnwHEP/exec';
 
 function _numFields(r, numKeys, boolKeys) {
   boolKeys = boolKeys || [];
@@ -1347,8 +1347,10 @@ async function syncFromSheet() {
     if(data.dojo && data.dojo.length)    DB.dojo    = data.dojo.map(function(r){ return _numFields(r,['id','amt']); });
     if(data.dorun && data.dorun.length)  DB.dorun   = data.dorun.map(function(r){ return _numFields(r,numDR,['pending','is_special']); });
     if(data.taskeen && data.taskeen.length) DB.taskeen = data.taskeen.map(function(r){ return _numFields(r,numDR); });
+    // Support both old format (expenses_dojo) and new format (expenses.dojo)
+    const expSrc = data.expenses || {};
     ['dojo','dorun','taskeen','studio'].forEach(function(k){
-      const d = data['expenses_'+k];
+      const d = expSrc[k] || data['expenses_'+k];
       if(d && d.length) DB.expenses[k] = d.map(function(r){ return _numFields(r,['id','amt']); });
     });
     persist(); normalise(); refreshAll();
