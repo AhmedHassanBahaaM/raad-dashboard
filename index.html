@@ -3546,23 +3546,36 @@ function renderRecommendations() {
 function renderPartners() {
   const el=$i('ov-partners'); if(!el) return;
 
+  // Helper: expense date → month index (handles both Arabic names and yyyy-MM-dd)
+  const expMonthIdx=(date)=>{
+    if(!date) return -1;
+    // Arabic month name → index
+    const ai=MAR.indexOf(date); if(ai>=0) return ai+1;
+    // English month name → index
+    const ei=MEN.indexOf(date); if(ei>=0) return ei+1;
+    // yyyy-MM-dd → month number
+    if(date.length>=7&&date[4]==='-') return parseInt(date.slice(5,7),10)||(-1);
+    return -1;
+  };
   // Helper: per-project profit for a given English month key
-  // Uses same formula as SEL.dbIncome - SEL.dbExpenses so monthly values sum to grand totals
+  // Matches Google Sheets: trade profit (r.profit from Sheets col K) minus monthly overhead expenses
   const projProfit=(sec,mk)=>{
+    const mi=MEN.indexOf(mk)+1; // 1-based month index
     if(sec==='dojo'){
       const inc=DB.dojo.filter(r=>(A2E[r.month]||r.month)===mk).reduce((s,r)=>s+(r.amt||0),0);
-      const exp=(DB.expenses.dojo||[]).filter(r=>(A2E[r.date]||r.date)===mk).reduce((s,r)=>s+(r.amt||0),0);
+      const exp=(DB.expenses.dojo||[]).filter(r=>expMonthIdx(r.date)===mi).reduce((s,r)=>s+(r.amt||0),0);
       return inc-exp;
     }
     if(sec==='dorun'){
-      const inc=DB.dorun.filter(r=>!r.pending&&r.month===mk).reduce((s,r)=>s+safe(r.jpy),0);
-      const exp=(DB.expenses.dorun||[]).filter(r=>(A2E[r.date]||r.date)===mk).reduce((s,r)=>s+(r.amt||0),0);
-      return inc-exp;
+      // r.profit = Sheets column K (trade profit), preserved by normalise()
+      const tradePro=DB.dorun.filter(r=>!r.pending&&r.month===mk).reduce((s,r)=>s+safe(r.profit),0);
+      const overhead=(DB.expenses.dorun||[]).filter(r=>expMonthIdx(r.date)===mi).reduce((s,r)=>s+(r.amt||0),0);
+      return tradePro-overhead;
     }
     if(sec==='taskeen'){
-      const inc=DB.taskeen.filter(r=>!r.pending&&r.month===mk).reduce((s,r)=>s+safe(r.jpy),0);
-      const exp=(DB.expenses.taskeen||[]).filter(r=>(A2E[r.date]||r.date)===mk).reduce((s,r)=>s+(r.amt||0),0);
-      return inc-exp;
+      const tradePro=DB.taskeen.filter(r=>!r.pending&&r.month===mk).reduce((s,r)=>s+safe(r.profit),0);
+      const overhead=(DB.expenses.taskeen||[]).filter(r=>expMonthIdx(r.date)===mi).reduce((s,r)=>s+(r.amt||0),0);
+      return tradePro-overhead;
     }
     return 0;
   };
