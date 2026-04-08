@@ -3547,6 +3547,7 @@ function renderPartners() {
   const el=$i('ov-partners'); if(!el) return;
 
   // Helper: per-project profit for a given English month key
+  // Uses same formula as SEL.dbIncome - SEL.dbExpenses so monthly values sum to grand totals
   const projProfit=(sec,mk)=>{
     if(sec==='dojo'){
       const inc=DB.dojo.filter(r=>(A2E[r.month]||r.month)===mk).reduce((s,r)=>s+(r.amt||0),0);
@@ -3554,16 +3555,14 @@ function renderPartners() {
       return inc-exp;
     }
     if(sec==='dorun'){
-      const rows=DB.dorun.filter(r=>!r.pending&&r.month===mk);
-      const p=rows.reduce((s,r)=>s+calcP(r).profit,0);
+      const inc=DB.dorun.filter(r=>!r.pending&&r.month===mk).reduce((s,r)=>s+safe(r.jpy),0);
       const exp=(DB.expenses.dorun||[]).filter(r=>(A2E[r.date]||r.date)===mk).reduce((s,r)=>s+(r.amt||0),0);
-      return p-exp;
+      return inc-exp;
     }
     if(sec==='taskeen'){
-      const rows=DB.taskeen.filter(r=>!r.pending&&r.month===mk);
-      const p=rows.reduce((s,r)=>s+calcP(r).profit,0);
+      const inc=DB.taskeen.filter(r=>!r.pending&&r.month===mk).reduce((s,r)=>s+safe(r.jpy),0);
       const exp=(DB.expenses.taskeen||[]).filter(r=>(A2E[r.date]||r.date)===mk).reduce((s,r)=>s+(r.amt||0),0);
-      return p-exp;
+      return inc-exp;
     }
     return 0;
   };
@@ -3576,20 +3575,17 @@ function renderPartners() {
   ]);
   const mKeys=MEN.filter(k=>allMk.has(k));
 
-  const shPart = DB.totals?.partners || {}; // Sheets partner shares by English month name
   const months=mKeys.map(mk=>{
     const djP=projProfit('dojo',mk);
     const drP=projProfit('dorun',mk);
     const tkP=projProfit('taskeen',mk);
-    // Use Google Sheets partner values when available, fall back to JS percentages
-    const sp = shPart[mk];
-    const raad  = sp ? Math.round(sp.raad)  : Math.round(djP*.7)+drP+Math.round(tkP*.5);
-    const rania = sp ? Math.round(sp.rania) : Math.round(djP*.3);
-    const maged = sp ? Math.round(sp.maged) : Math.round(tkP*.5);
-    const raadDojo=sp?'—':Math.round(djP*.7), raadDR=sp?'—':drP, raadTK=sp?'—':Math.round(tkP*.5);
+    // Always calculate from per-project profits using agreed percentages
+    const raad  = Math.round(djP*.7)+drP+Math.round(tkP*.5);
+    const rania = Math.round(djP*.3);
+    const maged = Math.round(tkP*.5);
+    const raadDojo=Math.round(djP*.7), raadDR=drP, raadTK=Math.round(tkP*.5);
     const label=MAR[MEN.indexOf(mk)]||mk;
-    const src = sp ? '📊 Sheets' : '🔢 محلي';
-    return {mk,label,djP,drP,tkP,raad,rania,maged,raadDojo,raadDR,raadTK,total:raad+rania+maged,src};
+    return {mk,label,djP,drP,tkP,raad,rania,maged,raadDojo,raadDR,raadTK,total:raad+rania+maged};
   });
 
   const totRaad=months.reduce((s,m)=>s+m.raad,0);
@@ -3609,7 +3605,7 @@ function renderPartners() {
         <div class="pts-card-val ${clr(totRaad)}" style="color:${totRaad>=0?'var(--green)':'var(--red)'}">${pnl(totRaad)}</div>
         <div class="pts-card-sub">دوجو 70% + Do Run 100% + Taskeen 50%
           <div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">
-            ${months.map(m=>`<span><b style="color:var(--gold)">${m.label}</b>: <span class="${clr(m.raad)}">${pnl(m.raad)}</span> <span style="opacity:.6">(${m.src||''}${typeof m.raadDojo==='number'?` دوجو ${pnl(m.raadDojo)} · DR ${pnl(m.raadDR)} · TK ${pnl(m.raadTK)}`:''})</span></span>`).join('')}
+            ${months.map(m=>`<span><b style="color:var(--gold)">${m.label}</b>: <span class="${clr(m.raad)}">${pnl(m.raad)}</span> <span style="opacity:.6">(دوجو ${pnl(m.raadDojo)} · DR ${pnl(m.raadDR)} · TK ${pnl(m.raadTK)})</span></span>`).join('')}
           </div>
         </div>
       </div>
