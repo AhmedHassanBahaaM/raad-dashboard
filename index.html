@@ -1518,10 +1518,10 @@ const SEL = {
   localIncome: () => ['dojo','dorun','taskeen'].reduce((s,k)=>s+SEL.dbIncome(k),0),
   localExpenses: () => ['dojo','dorun','taskeen'].reduce((s,k)=>s+SEL.dbExpenses(k),0),
   localProfit: () => SEL.localIncome() - SEL.localExpenses(),
-  // totalIncome/Expenses/Profit: use Sheets authoritative values when available
-  totalIncome: () => DB.totals?.grand?.income ?? SEL.localIncome(),
-  totalExpenses: () => DB.totals?.grand?.expenses ?? SEL.localExpenses(),
-  totalProfit: () => DB.totals?.grand?.profit ?? SEL.localProfit(),
+  // totalIncome/Expenses/Profit: use Sheets authoritative values when available (only if income > 0)
+  totalIncome: () => (DB.totals && DB.totals.grand && DB.totals.grand.income) ? DB.totals.grand.income : SEL.localIncome(),
+  totalExpenses: () => (DB.totals && DB.totals.grand && DB.totals.grand.income) ? DB.totals.grand.expenses : SEL.localExpenses(),
+  totalProfit: () => (DB.totals && DB.totals.grand && DB.totals.grand.income) ? DB.totals.grand.profit : SEL.localProfit(),
   projIncome: sec => SEL.dbIncome(sec),
   projProfit: sec => SEL.dbProfit(sec),
   dojoRevTotal: () => SEL.dbIncome('dojo'),
