@@ -1514,8 +1514,9 @@ const SEL = {
   },
   dbProfit: sec => SEL.dbIncome(sec) - SEL.dbExpenses(sec),
   // localIncome/Expenses/Profit: always computed from raw records (used for mismatch detection)
+  // NOTE: studio is already distributed into dojo/dorun/taskeen expense records — do NOT double-count
   localIncome: () => ['dojo','dorun','taskeen'].reduce((s,k)=>s+SEL.dbIncome(k),0),
-  localExpenses: () => ['dojo','dorun','taskeen','studio'].reduce((s,k)=>s+SEL.dbExpenses(k),0),
+  localExpenses: () => ['dojo','dorun','taskeen'].reduce((s,k)=>s+SEL.dbExpenses(k),0),
   localProfit: () => SEL.localIncome() - SEL.localExpenses(),
   // totalIncome/Expenses/Profit: use Sheets authoritative values when available
   totalIncome: () => DB.totals?.grand?.income ?? SEL.localIncome(),
