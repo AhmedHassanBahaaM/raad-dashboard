@@ -1348,6 +1348,7 @@ DB.totals = null; // populated from Google Sheets "Total" tab on sync
 // ════════════════════════════════════════════════════════════
 // ← بعد نشر Apps Script، الصق الـ URL هنا
 const SYNC_URL = 'https://script.google.com/macros/s/AKfycbxj_67Mg7APORPfHjxwjtClmS0fCqidklc5t4OVmHQe8UUYXPgmhTiVaO6tortbuU-5ug/exec';
+const SHEET_ID = '1W5uAQdi_7iO0iHpaTCEWKYU1zI31GcJO';
 
 function _numFields(r, numKeys, boolKeys) {
   boolKeys = boolKeys || [];
@@ -1357,12 +1358,71 @@ function _numFields(r, numKeys, boolKeys) {
   return o;
 }
 
+// ── Read Total tab directly via Google Sheets gviz API (bypasses Apps Script) ──
+async function fetchSheetTotals() {
+  try {
+    const url = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:json&sheet=Total&range=L1:P35';
+    const res = await fetch(url);
+    const txt = await res.text();
+    const json = txt.replace(/^[^(]*\(/, '').replace(/\);?\s*$/, '');
+    const gd = JSON.parse(json);
+    if (gd.status !== 'ok' || !gd.table) return null;
+
+    const rows = gd.table.rows.map(function(r) {
+      return r.c.map(function(c) { return c ? c.v : null; });
+    });
+
+    // gviz returns months as "Date(2026,M,1)" where M is 0-based
+    function gvizMonth(v) {
+      if (!v || typeof v !== 'string') return null;
+      var m = v.match(/Date\(\d+,(\d+),/);
+      return m ? MEN[parseInt(m[1], 10)] : null;
+    }
+
+    var result = { monthly: {}, grand: { income: 0, expenses: 0, profit: 0 }, partners: { raad: 0, rania: 0, maged: 0 }, monthlyPartners: {} };
+
+    // Table 1: rows 0-12 = monthly summary + Grand Total (row with null month)
+    // Table 2: rows 13-25 = monthly partners + Grand Total
+    var inPartners = false;
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var mk = gvizMonth(r[1]);
+      var v1 = +(r[2]) || 0, v2 = +(r[3]) || 0, v3 = +(r[4]) || 0;
+
+      if (mk) {
+        if (!inPartners) {
+          result.monthly[mk] = { income: v1, expenses: v2, profit: v3 };
+        } else {
+          result.monthlyPartners[mk] = { raad: v1, rania: v2, maged: v3 };
+        }
+      } else if (r[2] !== null && (v1 !== 0 || v2 !== 0 || v3 !== 0)) {
+        // Grand Total row (month is null, has values)
+        if (!inPartners) {
+          result.grand = { income: v1, expenses: v2, profit: v3 };
+          inPartners = true; // next section is partners
+        } else {
+          result.partners = { raad: v1, rania: v2, maged: v3 };
+          break;
+        }
+      }
+    }
+    return result;
+  } catch (e) {
+    console.warn('fetchSheetTotals failed:', e);
+    return null;
+  }
+}
+
 async function syncFromSheet() {
   if(!SYNC_URL) return;
   const btn = $i('sync-btn');
   if(btn){ btn.textContent='⏳'; btn.disabled=true; btn.title='جاري التزامن...'; }
   try {
-    const res = await fetch(SYNC_URL + '?t=' + Date.now());
+    // Fetch row data from Apps Script AND totals from gviz in parallel
+    const [res, totals] = await Promise.all([
+      fetch(SYNC_URL + '?t=' + Date.now()),
+      fetchSheetTotals()
+    ]);
     if(!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const numDR = ['id','usd','jpy','ext_ship','int_ship','actual_price','total_cost','profit'];
@@ -1375,8 +1435,8 @@ async function syncFromSheet() {
       const d = expSrc[k] || data['expenses_'+k];
       if(d && d.length) DB.expenses[k] = d.map(function(r){ return _numFields(r,['id','amt']); });
     });
-    // Store authoritative totals from Google Sheets "Total" tab
-    if(data.totals && data.totals.grand) DB.totals = data.totals;
+    // Store authoritative totals from Google Sheets "Total" tab (read via gviz API)
+    if(totals && totals.grand && totals.grand.income > 0) DB.totals = totals;
     persist(); normalise(); refreshAll();
     const now = new Date().toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'});
     if(btn){ btn.textContent='☁'; btn.disabled=false; btn.title='آخر تزامن: '+now; }
