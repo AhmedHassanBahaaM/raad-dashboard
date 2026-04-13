@@ -1306,7 +1306,7 @@ details.ov-fold>.fold-body{padding:0}
 // ════════════════════════════════════════════════════════════
 const CFG = {
   INT_SHIP: 1300,
-  SCHEMA_VER: '3.0',
+  SCHEMA_VER: '3.1',
   MAX_AUDIT: 500,
   SALT: 'RAAD_PROJ_2026_INTERNAL',
   SESS_KEY: 'raad_sess_v2',
@@ -1522,11 +1522,12 @@ const bm = m => {
 const pct = (v,t) => t===0?'—':(v/t*100).toFixed(1)+'%';
 const margin = (p,r) => r===0?'—':(p/r*100).toFixed(1)+'%';
 
-// Business logic: derive profit (never stored, always computed from source fields)
+// Business logic: use Sheets values when available, fall back to components
 function calcP(r) {
   const int_s = safe(r.int_ship, CFG.INT_SHIP);
-  const tc = safe(r.actual_price) + safe(r.ext_ship) + int_s;
-  return { tc, profit: safe(r.jpy) - tc };
+  const tc = safe(r.total_cost) || (safe(r.actual_price) + safe(r.ext_ship) + int_s);
+  const profit = (r.profit !== undefined && r.profit !== null) ? safe(r.profit) : (safe(r.jpy) - tc);
+  return { tc, profit };
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1976,7 +1977,7 @@ function renderOverview() {
 
   // ── Mismatch detection: compare local calc vs Google Sheets totals ──
   let mismatchHtml = '';
-  if(DB.totals && DB.totals.grand) {
+  if(DB.totals && DB.totals.grand && DB.totals.grand.income > 0) {
     const locI = SEL.localIncome(), locE = SEL.localExpenses(), locP = SEL.localProfit();
     const shI = DB.totals.grand.income, shE = DB.totals.grand.expenses, shP = DB.totals.grand.profit;
     const diffI = Math.abs(locI - shI), diffE = Math.abs(locE - shE), diffP = Math.abs(locP - shP);
@@ -3622,22 +3623,28 @@ function renderPartners() {
   ]);
   const mKeys=MEN.filter(k=>allMk.has(k));
 
+  // Use Sheets monthly partner data when available (authoritative), else calculate locally
+  const shMP = DB.totals && DB.totals.monthlyPartners && Object.keys(DB.totals.monthlyPartners).length > 0 ? DB.totals.monthlyPartners : null;
+  const shPT = DB.totals && DB.totals.partners && (DB.totals.partners.raad || DB.totals.partners.rania || DB.totals.partners.maged) ? DB.totals.partners : null;
+
   const months=mKeys.map(mk=>{
     const djP=projProfit('dojo',mk);
     const drP=projProfit('dorun',mk);
     const tkP=projProfit('taskeen',mk);
-    // Always calculate from per-project profits using agreed percentages
-    const raad  = Math.round(djP*.7)+drP+Math.round(tkP*.5);
-    const rania = Math.round(djP*.3);
-    const maged = Math.round(tkP*.5);
+    // Use Sheets partner shares if available, else calculate locally
+    const mp = shMP && shMP[mk];
+    const raad  = mp ? mp.raad  : (Math.round(djP*.7)+drP+Math.round(tkP*.5));
+    const rania = mp ? mp.rania : Math.round(djP*.3);
+    const maged = mp ? mp.maged : Math.round(tkP*.5);
     const raadDojo=Math.round(djP*.7), raadDR=drP, raadTK=Math.round(tkP*.5);
     const label=MAR[MEN.indexOf(mk)]||mk;
     return {mk,label,djP,drP,tkP,raad,rania,maged,raadDojo,raadDR,raadTK,total:raad+rania+maged};
   });
 
-  const totRaad=months.reduce((s,m)=>s+m.raad,0);
-  const totRania=months.reduce((s,m)=>s+m.rania,0);
-  const totMaged=months.reduce((s,m)=>s+m.maged,0);
+  // Use Sheets grand partner totals if available
+  const totRaad  = shPT ? shPT.raad  : months.reduce((s,m)=>s+m.raad,0);
+  const totRania = shPT ? shPT.rania : months.reduce((s,m)=>s+m.rania,0);
+  const totMaged = shPT ? shPT.maged : months.reduce((s,m)=>s+m.maged,0);
   const totAll=totRaad+totRania+totMaged;
   const clr=n=>n>=0?'up':'dn';
 
