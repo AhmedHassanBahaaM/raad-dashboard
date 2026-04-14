@@ -464,10 +464,10 @@ body.vmode .bte,body.vmode .btd,body.vmode .btn-gold,body.vmode .btn-red,body.vm
 
 @keyframes mbu{from{transform:translateY(60px);opacity:0}to{transform:none;opacity:1}}
 /* ══════════════════════════════════════════════
-   SMART ALERT SYSTEM
+   SMART ALERT SYSTEM — Notification Center
 ══════════════════════════════════════════════ */
 .alerts-wrap{margin-bottom:14px;display:flex;flex-direction:column;gap:7px}
-.alert-bar{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--r);font-size:12px;border:1px solid transparent;animation:fi .25s ease}
+.alert-bar{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:var(--r);font-size:12px;border:1px solid transparent}
 .al-warn{background:rgba(240,72,88,.07);border-color:rgba(240,72,88,.22);color:var(--red)}
 .al-info{background:rgba(72,136,248,.07);border-color:rgba(72,136,248,.22);color:var(--blue)}
 .al-amber{background:rgba(245,168,48,.07);border-color:rgba(245,168,48,.22);color:var(--amber)}
@@ -476,13 +476,34 @@ body.vmode .bte,body.vmode .btd,body.vmode .btn-gold,body.vmode .btn-red,body.vm
 .alert-body{flex:1;min-width:0}
 .alert-title{font-size:12px;font-weight:800;margin-bottom:1px}
 .alert-msg{font-size:11px;opacity:.8;font-weight:500;line-height:1.4}
+/* ── Notification center ── */
+.nc-wrap{position:relative;margin-bottom:14px}
+.nc-btn{display:flex;align-items:center;gap:10px;width:100%;padding:10px 16px;background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);cursor:pointer;font-family:inherit;font-size:12px;color:var(--t1);font-weight:700;transition:border-color .2s,box-shadow .2s}
+.nc-btn:hover{border-color:var(--gold);box-shadow:0 0 12px rgba(240,176,64,.1)}
+.nc-btn .nc-ic{font-size:18px}
+.nc-btn .nc-badge{min-width:20px;height:20px;padding:0 6px;border-radius:10px;font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;color:#fff}
+.nc-badge.nb-red{background:var(--red)}.nc-badge.nb-amber{background:var(--amber)}.nc-badge.nb-green{background:var(--green)}
+.nc-btn .nc-arrow{margin-right:auto;font-size:9px;color:var(--t3);transition:transform .2s}
+.nc-wrap.open .nc-arrow{transform:rotate(90deg)}
+.nc-panel{display:none;margin-top:8px;background:var(--card);border:1px solid var(--b1);border-radius:var(--r2);overflow:hidden;animation:fi .2s ease}
+.nc-wrap.open .nc-panel{display:block}
+.nc-group{padding:10px 14px;border-bottom:1px solid var(--b1)}
+.nc-group:last-child{border-bottom:0}
+.nc-group-title{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);margin-bottom:6px}
 /* ══════════════════════════════════════════════
    BUSINESS INSIGHT LAYER
 ══════════════════════════════════════════════ */
-.insight-strip{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;background:var(--gg);border:1px solid rgba(240,176,64,.15);border-radius:var(--r);margin-bottom:12px;font-size:11px;color:var(--t2);font-weight:500;line-height:1.55}
+.insight-strip{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;background:var(--gg);border:1px solid rgba(240,176,64,.15);border-radius:var(--r);font-size:11px;color:var(--t2);font-weight:500;line-height:1.55}
 .insight-ic{font-size:14px;flex-shrink:0;margin-top:1px}
 .insight-text b{color:var(--gold);font-weight:700}
 .insight-text em{color:var(--green);font-style:normal;font-weight:700}
+/* ── Overview folds grid ── */
+.ov-folds-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.ov-folds-grid details.ov-fold{margin-bottom:0}
+.ov-folds-grid details.ov-fold>summary{padding:14px 16px;gap:10px;flex-direction:column;align-items:flex-start;min-height:70px}
+.ov-folds-grid details.ov-fold>summary .fold-meta{font-size:10px;color:var(--t3);font-weight:500;margin-top:2px}
+.ov-folds-grid details.ov-fold[open]{grid-column:1/-1}
+@media(max-width:700px){.ov-folds-grid{grid-template-columns:1fr}}
 .insight-text s{color:var(--red);text-decoration:none;font-weight:700}
 /* ══════════════════════════════════════════════
    KPI INTELLIGENCE BADGES
@@ -819,13 +840,14 @@ details.ov-fold>.fold-body{padding:0}
   </div>
   <div class="pts-wrap" id="ov-partners"></div>
 
+  <div class="ov-folds-grid">
   <details class="ov-fold">
-    <summary>📋 الملخص التنفيذي</summary>
+    <summary>📋 الملخص التنفيذي<span class="fold-meta" id="fold-exec-meta">أداء المشاريع وملخص القرارات</span></summary>
     <div class="fold-body"><div class="exec-wrap" id="ov-exec" style="border:0;border-radius:0;margin:0"></div></div>
   </details>
 
   <details class="ov-fold">
-    <summary>📊 رسوم بيانية تفصيلية</summary>
+    <summary>📊 رسوم بيانية تفصيلية<span class="fold-meta">مقارنة شهرية + توزيع المصروفات</span></summary>
     <div class="fold-body" style="padding:14px">
       <div class="r2" style="margin-bottom:0">
         <div class="cbox">
@@ -843,7 +865,7 @@ details.ov-fold>.fold-body{padding:0}
   </details>
 
   <details class="ov-fold">
-    <summary>📈 مقارنة الأرباح والمخاطر</summary>
+    <summary>📈 مقارنة الأرباح والمخاطر<span class="fold-meta" id="fold-risks-meta">تحليل الهامش + التوصيات</span></summary>
     <div class="fold-body">
       <div id="ov-profit-comp" class="tbox" style="border:0;border-radius:0;margin:0"></div>
       <div id="ov-risks" style="padding:0 16px 14px"></div>
@@ -852,12 +874,13 @@ details.ov-fold>.fold-body{padding:0}
   </details>
 
   <details class="ov-fold">
-    <summary>🧠 رؤى إدارية وتوقعات</summary>
+    <summary>🧠 رؤى إدارية وتوقعات<span class="fold-meta" id="fold-mgmt-meta">تحليل ذكي + توقعات مالية</span></summary>
     <div class="fold-body">
       <div id="mgmt-insights" style="margin:0"></div>
       <div id="ov-forecast" style="margin:0"></div>
     </div>
   </details>
+  </div>
 
   <details class="ov-fold">
     <summary>🎛 تحليل السيناريوهات — ماذا لو؟</summary>
@@ -2071,24 +2094,37 @@ function renderOverview() {
   if(pnd>0) alerts.push({cls:'al-amber',ic:'⏳',title:`${pnd} طلب بانتظار التسعير`,msg:'أدخل الأسعار لاستكمال حساب الأرباح'});
   if(SEL.dbProfit('dojo')>500000) alerts.push({cls:'al-green',ic:'🏆',title:'Dojo يحقق أداءً ممتازاً',msg:`صافي ${fmtM(SEL.dbProfit('dojo'))} — أقوى المشاريع الثلاثة ربحاً`});
 
-  const alertsHtml = alerts.length>0 ? `<div class="alerts-wrap">${alerts.map(a=>`
-    <div class="alert-bar ${a.cls}">
-      <span class="alert-ic">${a.ic}</span>
-      <div class="alert-body"><div class="alert-title">${a.title}</div><div class="alert-msg">${a.msg}</div></div>
-    </div>`).join('')}</div>` : '';
-
-  // ── Business Insight: Phase 3 ──
+  // ── Business Insight ──
   const bestProj = ['dojo','dorun','taskeen'].reduce((b,k)=>SEL.dbProfit(k)>SEL.dbProfit(b)?k:b,'dojo');
   const bestLabel = {dojo:'رعد دوجو',dorun:'Do Run',taskeen:'Taskeen'}[bestProj];
-  const insightHtml = `<div class="insight-strip"><span class="insight-ic">💡</span><div class="insight-text">
-    <b>${bestLabel}</b> هو أفضل المشاريع أداءً · صافي ربح <em>${fmtM(SEL.dbProfit(bestProj))}</em> ·
-    هامش الدوجو <em>${(SEL.dbProfit('dojo')/Math.max(SEL.dbIncome('dojo'),1)*100).toFixed(0)}%</em>
-    ${totP<0?'· <s>الأعمال في خسارة إجمالية — راجع التكاليف فوراً</s>':'· التجارة مستمرة وتحقق ربحاً إجمالياً'}
-  </div></div>`;
+  alerts.push({cls:'al-info',ic:'💡',title:`${bestLabel} الأفضل أداءً`,msg:`صافي ربح ${fmtM(SEL.dbProfit(bestProj))} · هامش الدوجو ${(SEL.dbProfit('dojo')/Math.max(SEL.dbIncome('dojo'),1)*100).toFixed(0)}% ${totP<0?'· الأعمال في خسارة إجمالية':'· التجارة مستمرة وتحقق ربحاً إجمالياً'}`});
 
-  // inject alerts and insight before KPIs
+  // ── Notification center: one compact element ──
+  const allMsgs = [];
+  if(mismatchHtml) allMsgs.push({cls:'al-warn',ic:'⚠️',title:'فرق بين المحلي و Sheets',msg:mismatchHtml.replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,120)+'…',full:mismatchHtml});
+  allMsgs.push(...alerts);
+  const warnCount = allMsgs.filter(a=>a.cls==='al-warn').length;
+  const amberCount = allMsgs.filter(a=>a.cls==='al-amber').length;
+  const goodCount = allMsgs.filter(a=>a.cls==='al-green'||a.cls==='al-info').length;
+  const badgeClass = warnCount>0?'nb-red':amberCount>0?'nb-amber':'nb-green';
+  const sevLabel = warnCount>0?'تحتاج انتباه':amberCount>0?'تنبيهات':'أداء جيد';
+  const groupMsgs = (msgs,label)=> msgs.length ? `<div class="nc-group"><div class="nc-group-title">${label}</div>${msgs.map(a=>`<div class="alert-bar ${a.cls}" style="margin-bottom:4px"><span class="alert-ic">${a.ic}</span><div class="alert-body"><div class="alert-title">${a.title}</div><div class="alert-msg">${a.msg}</div></div></div>`).join('')}</div>` : '';
+  const ncHtml = allMsgs.length>0 ? `<div class="nc-wrap" id="nc-wrap">
+    <button class="nc-btn" onclick="$i('nc-wrap').classList.toggle('open')">
+      <span class="nc-ic">🔔</span>
+      <span>${sevLabel}</span>
+      <span class="nc-badge ${badgeClass}">${allMsgs.length}</span>
+      <span class="nc-arrow">▶</span>
+    </button>
+    <div class="nc-panel">
+      ${groupMsgs(allMsgs.filter(a=>a.cls==='al-warn'),'⚠ تحذيرات')}
+      ${groupMsgs(allMsgs.filter(a=>a.cls==='al-amber'),'⏳ تنبيهات')}
+      ${groupMsgs(allMsgs.filter(a=>a.cls==='al-green'||a.cls==='al-info'),'✅ رؤى إيجابية')}
+    </div>
+  </div>` : '';
+
   const preKpi=$i('ov-pre');
-  if(preKpi) preKpi.innerHTML=mismatchHtml+alertsHtml+insightHtml;
+  if(preKpi) preKpi.innerHTML=ncHtml;
 
   sS('ov-kpis',`
     <div class="kpi"><div class="kac" style="background:var(--blue)"></div>
